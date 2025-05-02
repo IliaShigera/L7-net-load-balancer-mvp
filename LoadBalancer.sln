@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A7F8349C-2312-4934-A011-C0B8BB4184A1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoadBalancer.Host", "src\Host\LoadBalancer.Host.csproj", "{4A8C00BC-5922-4CAA-8D1B-A01D3F699D12}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoadBalancer.Core", "src\Core\LoadBalancer.Core.csproj", "{91FBA85F-4734-4DA5-9D9F-2DF9986F1BDE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{4A8C00BC-5922-4CAA-8D1B-A01D3F699D12} = {A7F8349C-2312-4934-A011-C0B8BB4184A1}
+		{91FBA85F-4734-4DA5-9D9F-2DF9986F1BDE} = {A7F8349C-2312-4934-A011-C0B8BB4184A1}
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4A8C00BC-5922-4CAA-8D1B-A01D3F699D12}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A8C00BC-5922-4CAA-8D1B-A01D3F699D12}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A8C00BC-5922-4CAA-8D1B-A01D3F699D12}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4A8C00BC-5922-4CAA-8D1B-A01D3F699D12}.Release|Any CPU.Build.0 = Release|Any CPU
+		{91FBA85F-4734-4DA5-9D9F-2DF9986F1BDE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{91FBA85F-4734-4DA5-9D9F-2DF9986F1BDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{91FBA85F-4734-4DA5-9D9F-2DF9986F1BDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{91FBA85F-4734-4DA5-9D9F-2DF9986F1BDE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

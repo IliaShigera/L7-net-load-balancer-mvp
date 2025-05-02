@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Folder Include="Configuration\" />
+      <Folder Include="Health\" />
+      <Folder Include="Proxy\" />
+      <Folder Include="Routing\" />
+      <Folder Include="Server\" />
+    </ItemGroup>
+
+</Project>
