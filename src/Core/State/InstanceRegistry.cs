@@ -12,5 +12,8 @@ public sealed class InstanceRegistry
         _instances = instances;
     }
 
-    public IReadOnlyList<Instance> ListAll() => _instances.AsReadOnly();
+    public IReadOnlyList<Instance> ListHealthy() => _instances
+        .Where(i => i.IsHealthy)
+        .ToList()
+        .AsReadOnly();
 }

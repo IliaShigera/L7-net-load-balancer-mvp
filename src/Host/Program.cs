@@ -25,7 +25,7 @@ builder.Services.AddSingleton<InstanceRegistry>(_ =>
 builder.Services.AddSingleton<HttpClient>();
 builder.Services.AddSingleton<ILoadBalancingPolicy, RoundRobinPolicy>();
 builder.Services.AddSingleton<IInstanceHealthChecker, InstanceHealthChecker>();
-builder.Services.AddSingleton<IHttpReverseProxy, HttpReverseProxy>();
+builder.Services.AddSingleton<IBackendForwarder, BackendForwarder>();
 
 builder.Services.AddHostedService<HealthCheckService>();
 

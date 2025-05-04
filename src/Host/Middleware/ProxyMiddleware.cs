@@ -4,40 +4,57 @@ internal sealed class ProxyMiddleware
 {
     private readonly InstanceRegistry _instanceRegistry;
     private readonly ILoadBalancingPolicy _loadBalancingPolicy;
-    private readonly IHttpReverseProxy _proxy;
+    private readonly IBackendForwarder _backendForwarder;
     private readonly ILogger<ProxyMiddleware> _logger;
 
     public ProxyMiddleware(
         RequestDelegate next,
         InstanceRegistry instanceRegistry,
         ILoadBalancingPolicy loadBalancingPolicy,
-        IHttpReverseProxy proxy,
+        IBackendForwarder backendForwarder,
         ILogger<ProxyMiddleware> logger)
     {
         _ = next;
         _instanceRegistry = instanceRegistry;
         _loadBalancingPolicy = loadBalancingPolicy;
-        _proxy = proxy;
+        _backendForwarder = backendForwarder;
         _logger = logger;
     }
 
     public async Task InvokeAsync(HttpContext context, CancellationToken ct)
     {
-        var instance = _loadBalancingPolicy.Select(_instanceRegistry.ListAll());
-        if (instance is not { IsHealthy: true })
+        var healthyInstances = _instanceRegistry.ListHealthy();
+        if (!healthyInstances.Any())
         {
             _logger.LogWarning("No healthy instance found.");
 
             context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
-            await context.Response.WriteAsync("No available instances.");
+            await context.Response.WriteAsync("No available instances.", ct);
             return;
         }
 
-        _logger.LogDebug("Routing request to {InstanceName} [{InstanceAddress}]", instance.Name, instance.Address);
+        foreach (var instance in _loadBalancingPolicy.GetPreferredOrder(healthyInstances))
+        {
+            _logger.LogDebug("Routing request to {InstanceName} [{InstanceAddress}]", instance.Name, instance.Address);
 
-        context.Request.Headers["X-Forwarded-Host"] = context.Request.Host.ToString();
-        context.Request.Headers["X-Forwarded-Proto"] = context.Request.Scheme;
+            try
+            {
+                context.Request.Headers["X-Forwarded-Host"] = context.Request.Host.ToString();
+                context.Request.Headers["X-Forwarded-Proto"] = context.Request.Scheme;
 
-        await _proxy.ProxyAsync(context, instance, ct);
+                await _backendForwarder.ForwardAsync(context, instance, ct);
+                return;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Proxy error: {InstanceName} [{InstanceAddress}]",
+                    instance.Name,
+                    instance.Address);
+            }
+        }
+
+        _logger.LogWarning("All instances are unavailable.");
+        context.Response.StatusCode = StatusCodes.Status502BadGateway;
+        await context.Response.WriteAsync("All instances are unavailable.", ct);
     }
 }
