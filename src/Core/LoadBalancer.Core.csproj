@@ -6,12 +6,4 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
-    <ItemGroup>
-      <Folder Include="Configuration\" />
-      <Folder Include="Health\" />
-      <Folder Include="Proxy\" />
-      <Folder Include="Routing\" />
-      <Folder Include="Server\" />
-    </ItemGroup>
-
 </Project>
