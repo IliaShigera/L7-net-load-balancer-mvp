@@ -2,7 +2,6 @@ namespace LoadBalancer.Host.Middleware;
 
 internal sealed class ProxyMiddleware
 {
-    private readonly RequestDelegate _next;
     private readonly InstanceRegistry _instanceRegistry;
     private readonly ILoadBalancingPolicy _loadBalancingPolicy;
     private readonly IHttpReverseProxy _proxy;
@@ -15,7 +14,7 @@ internal sealed class ProxyMiddleware
         IHttpReverseProxy proxy,
         ILogger<ProxyMiddleware> logger)
     {
-        _next = next;
+        _ = next;
         _instanceRegistry = instanceRegistry;
         _loadBalancingPolicy = loadBalancingPolicy;
         _proxy = proxy;
@@ -27,10 +26,14 @@ internal sealed class ProxyMiddleware
         var instance = _loadBalancingPolicy.Select(_instanceRegistry.ListAll());
         if (instance is not { IsHealthy: true })
         {
+            _logger.LogWarning("No healthy instance found.");
+
             context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
             await context.Response.WriteAsync("No available instances.");
             return;
         }
+
+        _logger.LogDebug("Routing request to {InstanceName} [{InstanceAddress}]", instance.Name, instance.Address);
 
         context.Request.Headers["X-Forwarded-Host"] = context.Request.Host.ToString();
         context.Request.Headers["X-Forwarded-Proto"] = context.Request.Scheme;
