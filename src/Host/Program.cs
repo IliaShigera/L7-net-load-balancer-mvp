@@ -2,7 +2,18 @@
 
 builder.Configuration
     .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddEnvironmentVariables();
+
+builder.WebHost
+    .ConfigureKestrel(server => builder.Configuration.GetSection("Kestrel").Bind(server))
+    .ConfigureLogging(logging =>
+    {
+        logging.ClearProviders();
+        logging.AddConsole();
+        logging.AddDebug();
+        logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
+    });
 
 builder.Services
     .AddOptions<HealthCheckSettings>()
@@ -30,5 +41,13 @@ builder.Services.AddSingleton<IBackendForwarder, BackendForwarder>();
 builder.Services.AddHostedService<HealthCheckService>();
 
 await using var app = builder.Build();
-app.UseMiddleware<ProxyMiddleware>();
+
+app.UseRouting();
+app.MapGet("/healthz", () => Results.Ok("UP"));
+
+app.UseWhen(context => !context.Request.Path.StartsWithSegments("/healthz"), subApp =>
+{
+    subApp.UseMiddleware<ProxyMiddleware>();
+});
+
 await app.RunAsync();

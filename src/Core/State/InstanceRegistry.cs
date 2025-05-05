@@ -16,4 +16,6 @@ public sealed class InstanceRegistry
         .Where(i => i.IsHealthy)
         .ToList()
         .AsReadOnly();
+
+    public IReadOnlyList<Instance> ListAll() => _instances.AsReadOnly();
 }

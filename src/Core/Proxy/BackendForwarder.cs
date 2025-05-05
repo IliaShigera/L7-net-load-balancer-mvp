@@ -13,20 +13,20 @@ public sealed class BackendForwarder : IBackendForwarder
         using var response = await _http.SendAsync(proxyRequest, HttpCompletionOption.ResponseHeadersRead, ct);
 
         context.Response.StatusCode = (int)response.StatusCode;
-        
+
         foreach (var header in response.Headers)
-            context.Response.Headers[header.Key] = header.Value.ToArray();
+            if (!HttpProxyHelper.IsHopByHopHeader(header.Key))
+                context.Response.Headers[header.Key] = header.Value.ToArray();
 
         foreach (var header in response.Content.Headers)
-            context.Response.Headers[header.Key] = header.Value.ToArray();
+            if (!HttpProxyHelper.IsHopByHopHeader(header.Key))
+                context.Response.Headers[header.Key] = header.Value.ToArray();
 
         await response.Content.CopyToAsync(context.Response.Body, ct);
     }
 
-    private static Uri RewriteRequestUri(HttpRequest original, Instance backend)
-    {
-        return new Uri($"{backend.Address}{original.Path}{original.QueryString}");
-    }
+    private static Uri RewriteRequestUri(HttpRequest original, Instance backend) =>
+        new($"{backend.Address}{original.Path}{original.QueryString}");
 
     private static HttpRequestMessage CreateProxyRequest(HttpRequest original, Uri target)
     {
@@ -34,7 +34,9 @@ public sealed class BackendForwarder : IBackendForwarder
         {
             Method = new HttpMethod(original.Method),
             RequestUri = target,
-            Content = new StreamContent(original.Body)
+            Content = HttpProxyHelper.HasBody(original.Method)
+                ? new StreamContent(original.Body)
+                : null
         };
 
         foreach (var header in original.Headers)

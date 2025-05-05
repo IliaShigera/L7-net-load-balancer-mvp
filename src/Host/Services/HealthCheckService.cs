@@ -23,7 +23,8 @@ internal sealed class HealthCheckService : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            foreach (var instance in _instanceRegistry.ListHealthy())
+            var instances = _instanceRegistry.ListAll();
+            foreach (var instance in instances)
             {
                 var isAlive = await _healthChecker.IsAliveAsync(instance, stoppingToken);
                 if (isAlive)

@@ -21,7 +21,7 @@ internal sealed class ProxyMiddleware
         _logger = logger;
     }
 
-    public async Task InvokeAsync(HttpContext context, CancellationToken ct)
+    public async Task InvokeAsync(HttpContext context)
     {
         var healthyInstances = _instanceRegistry.ListHealthy();
         if (!healthyInstances.Any())
@@ -29,7 +29,7 @@ internal sealed class ProxyMiddleware
             _logger.LogWarning("No healthy instance found.");
 
             context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
-            await context.Response.WriteAsync("No available instances.", ct);
+            await context.Response.WriteAsync("No available instances.", context.RequestAborted);
             return;
         }
 
@@ -42,7 +42,7 @@ internal sealed class ProxyMiddleware
                 context.Request.Headers["X-Forwarded-Host"] = context.Request.Host.ToString();
                 context.Request.Headers["X-Forwarded-Proto"] = context.Request.Scheme;
 
-                await _backendForwarder.ForwardAsync(context, instance, ct);
+                await _backendForwarder.ForwardAsync(context, instance, context.RequestAborted);
                 return;
             }
             catch (Exception ex)
@@ -55,6 +55,6 @@ internal sealed class ProxyMiddleware
 
         _logger.LogWarning("All instances are unavailable.");
         context.Response.StatusCode = StatusCodes.Status502BadGateway;
-        await context.Response.WriteAsync("All instances are unavailable.", ct);
+        await context.Response.WriteAsync("All instances are unavailable.", context.RequestAborted);
     }
 }
