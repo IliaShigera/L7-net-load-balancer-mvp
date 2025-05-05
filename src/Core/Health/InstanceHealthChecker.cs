@@ -19,7 +19,7 @@ public sealed class InstanceHealthChecker : IInstanceHealthChecker
         try
         {
             var response = await _http.GetAsync(
-                new Uri(instance.Address),
+                new Uri($"{instance.Address}/{_settings.Path}"),
                 HttpCompletionOption.ResponseHeadersRead,
                 timeoutCts.Token);
 
