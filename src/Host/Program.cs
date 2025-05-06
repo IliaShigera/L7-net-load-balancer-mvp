@@ -2,7 +2,7 @@
 
 builder.Configuration
     .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-    .AddJsonFile(ConfigFilePaths.AppSettings, optional: false, reloadOnChange: true)
+    .AddJsonFile(ConfigFiles.AppSettings, optional: false, reloadOnChange: true)
     .AddEnvironmentVariables();
 
 builder.WebHost
@@ -28,6 +28,7 @@ builder.Services.AddSingleton<ILoadBalancingPolicy, RoundRobinPolicy>();
 builder.Services.AddSingleton<IBackendForwarder, BackendForwarder>();
 
 builder.Services.AddHostedService<HealthCheckService>();
+builder.Services.AddHostedService<ConfigInstancesReloadWatcher>();
 
 await using var app = builder.Build();
 
