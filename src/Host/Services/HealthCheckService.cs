@@ -3,13 +3,13 @@ namespace LoadBalancer.Host.Services;
 internal sealed class HealthCheckService : BackgroundService
 {
     private readonly ILogger<HealthCheckService> _logger;
-    private readonly InstanceRegistry _instanceRegistry;
+    private readonly IInstanceRegistry _instanceRegistry;
     private readonly HealthCheckSettings _settings;
     private readonly IInstanceHealthChecker _healthChecker;
 
     public HealthCheckService(
         ILogger<HealthCheckService> logger,
-        InstanceRegistry instanceRegistry,
+        IInstanceRegistry instanceRegistry,
         IOptions<HealthCheckSettings> options,
         IInstanceHealthChecker healthChecker)
     {

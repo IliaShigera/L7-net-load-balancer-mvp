@@ -2,14 +2,14 @@ namespace LoadBalancer.Host.Middleware;
 
 internal sealed class ProxyMiddleware
 {
-    private readonly InstanceRegistry _instanceRegistry;
+    private readonly IInstanceRegistry _instanceRegistry;
     private readonly ILoadBalancingPolicy _loadBalancingPolicy;
     private readonly IBackendForwarder _backendForwarder;
     private readonly ILogger<ProxyMiddleware> _logger;
 
     public ProxyMiddleware(
         RequestDelegate next,
-        InstanceRegistry instanceRegistry,
+        IInstanceRegistry instanceRegistry,
         ILoadBalancingPolicy loadBalancingPolicy,
         IBackendForwarder backendForwarder,
         ILogger<ProxyMiddleware> logger)
@@ -23,7 +23,7 @@ internal sealed class ProxyMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        var healthyInstances = _instanceRegistry.ListHealthy();
+        var healthyInstances = _instanceRegistry.ListAllHealthy(includeDrained: false);
         if (!healthyInstances.Any())
         {
             _logger.LogWarning("No healthy instance found.");
