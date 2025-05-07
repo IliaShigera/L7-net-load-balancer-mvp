@@ -101,7 +101,7 @@ adminGroup.MapPost("/add", (
     IInstanceRegistry registry,
     ILogger<Program> logger) =>
 {
-    if (definition is { Name: [], Address: []})
+    if (definition is { Name: [], Address: [] })
         return Results.BadRequest("Invalid instance definition");
 
     var instance = Instance.CreateFromDefinition(definition);
@@ -136,4 +136,6 @@ adminGroup.MapDelete("/remove", (
 app.UseWhen(context => !context.Request.Path.StartsWithSegments("/admin"),
     subApp => subApp.UseMiddleware<ProxyMiddleware>());
 
+app.UseMetricServer("/admin/metrics");
+app.UseHttpMetrics();
 await app.RunAsync();

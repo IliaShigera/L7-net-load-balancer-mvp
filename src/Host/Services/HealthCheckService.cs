@@ -30,6 +30,10 @@ internal sealed class HealthCheckService : BackgroundService
                 if (isAlive) instance.MarkHealthy();
                 else instance.MarkUnhealthy();
 
+                MetricsRegistry.InstanceHealth
+                    .WithLabels(instance.Name)
+                    .Set(instance.IsHealthy ? 1 : 0);
+
                 _logger.LogInformation("Health check: {InstanceName} [{InstanceAddress}] is {Status}",
                     instance.Name,
                     instance.Address,

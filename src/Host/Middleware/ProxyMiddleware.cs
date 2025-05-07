@@ -59,6 +59,8 @@ internal sealed class ProxyMiddleware
                     instance.Address,
                     context.Connection.RemoteIpAddress);
 
+                MetricsRegistry.ProxyRequests.WithLabels(instance.Name, context.Response.StatusCode.ToString()).Inc();
+
                 return;
             }
             catch (Exception ex)
@@ -70,6 +72,8 @@ internal sealed class ProxyMiddleware
                     context.Request.Method,
                     context.Request.Path,
                     context.Connection.RemoteIpAddress);
+
+                MetricsRegistry.ProxyErrors.WithLabels(instance.Name, ex.GetType().Name).Inc();
             }
         }
 
