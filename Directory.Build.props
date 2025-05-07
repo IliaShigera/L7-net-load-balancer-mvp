@@ -18,14 +18,16 @@
     <!--  Host  -->
     <ItemGroup Condition="'$(MSBuildProjectName)' == 'LoadBalancer.Host'">
         <ProjectReference Include="..\Core\LoadBalancer.Core.csproj"/>
-        
+
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1"/>
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1"/>
         <PackageReference Include="Microsoft.AspNetCore.App" Version="2.2.8"/>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
+        <PackageReference Include="Serilog.AspNetCore" Version="8.0.3"/>
+        <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0"/>
     </ItemGroup>
 
-    
+
     <!--  Core  -->
     <ItemGroup Condition="'$(MSBuildProjectName)' == 'LoadBalancer.Core'">
         <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1"/>

@@ -27,10 +27,8 @@ internal sealed class HealthCheckService : BackgroundService
             foreach (var instance in instances)
             {
                 var isAlive = await _healthChecker.IsAliveAsync(instance, stoppingToken);
-                if (isAlive)
-                    instance.MarkHealthy();
-                else
-                    instance.MarkUnhealthy();
+                if (isAlive) instance.MarkHealthy();
+                else instance.MarkUnhealthy();
 
                 _logger.LogInformation("Health check: {InstanceName} [{InstanceAddress}] is {Status}",
                     instance.Name,

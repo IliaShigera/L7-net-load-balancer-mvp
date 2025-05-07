@@ -22,7 +22,7 @@ internal sealed class ConfigInstancesReloadWatcher : BackgroundService
             EnableRaisingEvents = true,
             IncludeSubdirectories = false
         };
-        
+
         _watcher.Changed += OnChanged_ReloadInstances;
     }
 
@@ -30,31 +30,30 @@ internal sealed class ConfigInstancesReloadWatcher : BackgroundService
 
     private void OnChanged_ReloadInstances(object sender, FileSystemEventArgs e)
     {
+        _logger.LogInformation("Reloading instances");
+
         try
         {
             var reloaded = _configuration
                 .GetRequiredSection(ConfigSectionKeys.Instances)
                 .Get<List<InstanceDefinition>>();
 
-            if (reloaded is null)
+            if (reloaded is null or [])
             {
-                _logger.LogError("Invalid instance definitions.");
+                _logger.LogWarning("Instance definitions missing or invalid in config");
                 return;
             }
-
-            if (!reloaded.Any())
-                return;
 
             var newInstances = reloaded
                 .Select(Instance.CreateFromDefinition)
                 .ToList();
 
-            _logger.LogInformation("Reloading instances");
             _instanceRegistry.ReplaceAll(newInstances);
+            _logger.LogInformation("Reloaded {Count} instances from config", newInstances.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to reload instances: {Message}", ex.Message);
+            _logger.LogError(ex, "Failed to reload instances fron config");
         }
     }
 

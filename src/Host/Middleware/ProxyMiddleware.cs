@@ -26,7 +26,10 @@ internal sealed class ProxyMiddleware
         var healthyInstances = _instanceRegistry.ListAllHealthy(includeDrained: false);
         if (!healthyInstances.Any())
         {
-            _logger.LogWarning("No healthy instance found.");
+            _logger.LogWarning("No healthy instance found for {Method} {Path} from {ClientIP}",
+                context.Request.Method,
+                context.Request.Path,
+                context.Connection.RemoteIpAddress);
 
             context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
             await context.Response.WriteAsync("No available instances.", context.RequestAborted);
@@ -35,7 +38,12 @@ internal sealed class ProxyMiddleware
 
         foreach (var instance in _loadBalancingPolicy.GetPreferredOrder(healthyInstances))
         {
-            _logger.LogDebug("Routing request to {InstanceName} [{InstanceAddress}]", instance.Name, instance.Address);
+            _logger.LogInformation("Routing {Method} {Path} to {InstanceName} [{InstanceAddress}] for {ClientIP}",
+                context.Request.Method,
+                context.Request.Path,
+                instance.Name,
+                instance.Address,
+                context.Connection.RemoteIpAddress);
 
             try
             {
@@ -43,17 +51,33 @@ internal sealed class ProxyMiddleware
                 context.Request.Headers["X-Forwarded-Proto"] = context.Request.Scheme;
 
                 await _backendForwarder.ForwardAsync(context, instance, context.RequestAborted);
+                _logger.LogInformation(
+                    "Proxied {Method} {Path} to {InstanceName} [{InstanceAddress}] for {ClientIP}",
+                    context.Request.Method,
+                    context.Request.Path,
+                    instance.Name,
+                    instance.Address,
+                    context.Connection.RemoteIpAddress);
+
                 return;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Proxy error: {InstanceName} [{InstanceAddress}]",
+                _logger.LogError(ex,
+                    "Proxy error: {InstanceName} [{InstanceAddress}] for {Method} {Path} from {ClientIP}",
                     instance.Name,
-                    instance.Address);
+                    instance.Address,
+                    context.Request.Method,
+                    context.Request.Path,
+                    context.Connection.RemoteIpAddress);
             }
         }
 
-        _logger.LogWarning("All instances are unavailable.");
+        _logger.LogWarning("All instances are unavailable for {Method} {Path} from {ClientIP}",
+            context.Request.Method,
+            context.Request.Path,
+            context.Connection.RemoteIpAddress);
+
         context.Response.StatusCode = StatusCodes.Status502BadGateway;
         await context.Response.WriteAsync("All instances are unavailable.", context.RequestAborted);
     }

@@ -5,14 +5,18 @@ builder.Configuration
     .AddJsonFile(ConfigFiles.AppSettings, optional: false, reloadOnChange: true)
     .AddEnvironmentVariables();
 
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+
 builder.WebHost
     .ConfigureKestrel(server => builder.Configuration.GetSection(ConfigSectionKeys.Kestrel).Bind(server))
     .ConfigureLogging(logging =>
     {
         logging.ClearProviders();
-        logging.AddConsole();
-        logging.AddDebug();
-        logging.AddConfiguration(builder.Configuration.GetSection(ConfigSectionKeys.Logging));
+        logging.AddSerilog();
     });
 
 builder.Services
@@ -31,6 +35,7 @@ builder.Services.AddHostedService<HealthCheckService>();
 builder.Services.AddHostedService<ConfigInstancesReloadWatcher>();
 
 await using var app = builder.Build();
+app.UseSerilogRequestLogging();
 
 var adminGroup = app.MapGroup("admin");
 adminGroup.MapGet("/healthz", () => Results.Ok("UP"));
@@ -47,9 +52,9 @@ adminGroup.MapPost("/drain", (
 {
     var instance = registry.FindByName(instanceName);
     if (instance is null)
-        return Results.BadRequest("Instance not found.");
+        return Results.BadRequest("Instance not found");
 
-    logger.LogInformation("Draining instance {Name}", instance.Name);
+    logger.LogInformation("Draining instance {Name} {Address}", instance.Name, instance.Address);
     instance.Drain();
 
     return Results.Ok();
@@ -61,9 +66,9 @@ adminGroup.MapPost("/recover", (
 {
     var instance = registry.FindByName(instanceName);
     if (instance is null)
-        return Results.BadRequest("Instance not found.");
+        return Results.BadRequest("Instance not found");
 
-    logger.LogInformation("Recovering instance {Name}", instance.Name);
+    logger.LogInformation("Recovering instance {Name} {Address}", instance.Name, instance.Address);
     instance.Recover();
 
     return Results.Ok();
@@ -75,29 +80,32 @@ adminGroup.MapPost("/reload", (IConfiguration configuration, IInstanceRegistry r
         .GetRequiredSection(ConfigSectionKeys.Instances)
         .Get<List<InstanceDefinition>>();
 
-    if (reloaded is null)
-        return Results.BadRequest("Invalid instance definitions.");
+    if (reloaded is null or [])
+    {
+        logger.LogWarning("Instance definitions missing or invalid in config");
+        return Results.BadRequest("Invalid instance definitions");
+    }
 
     var newInstances = reloaded
         .Select(Instance.CreateFromDefinition)
         .ToList();
 
-    logger.LogInformation("Reloading instances");
+    logger.LogInformation("Reloading {Count} instances from config", newInstances.Count);
     registry.ReplaceAll(newInstances);
 
     return Results.Ok();
 });
 
 adminGroup.MapPost("/add", (
-    [FromBody] InstanceDefinition iDef,
+    [FromBody] InstanceDefinition definition,
     IInstanceRegistry registry,
     ILogger<Program> logger) =>
 {
-    if (string.IsNullOrWhiteSpace(iDef.Name) || string.IsNullOrWhiteSpace(iDef.Address))
-        return Results.BadRequest("Invalid instance definition.");
+    if (definition is { Name: [], Address: []})
+        return Results.BadRequest("Invalid instance definition");
 
-    var instance = Instance.CreateFromDefinition(iDef);
-    logger.LogInformation("adding instance {Name}", instance.Name);
+    var instance = Instance.CreateFromDefinition(definition);
+    logger.LogInformation("Adding instance {Name} {Address}", instance.Name, instance.Address);
     registry.Add(instance);
 
     var instances = registry.ListAll();
@@ -117,9 +125,9 @@ adminGroup.MapDelete("/remove", (
 {
     var instance = registry.FindByName(instanceName);
     if (instance is null)
-        return Results.BadRequest("Instance not found.");
+        return Results.BadRequest("Instance not found");
 
-    logger.LogInformation("Removing instance {Name}", instance.Name);
+    logger.LogInformation("Removing instance {Name} {Address}", instance.Name, instance.Address);
     registry.Remove(instance.Name);
 
     return Results.Ok();
